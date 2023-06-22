@@ -7,8 +7,6 @@ const router = express.Router();
 
 router.get('/', getUsers);
 
-router.get('/logged', getAllLoggedUsers);
-
 router.post('/signup', [check('email').normalizeEmail().isEmail(), check('password').isLength({min: 5}), check('name').not().isEmpty()], 
 signup);
 

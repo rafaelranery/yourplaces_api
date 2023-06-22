@@ -1,103 +1,81 @@
-const uuid = require('uuid')
 const { validationResult } = require('express-validator')
+
+const User = require('../models/user')
 
 const HttpError = require("../models/http-error")
 
-let DUMMY_USERS = [
-  {
-    id: 'u1',
-    name: 'Rafael Nery 1',
-    password: '123456789',
-    email: 'rafael@gmail.com',
-    isLogged: false
-  },
-  {
-    id: 'u2',
-    name: 'Rafael Nery 2',
-    password: '123456789',
-    email: 'rapizo@gmail.com',
-    isLogged: false
-  },
-  {
-    id: 'u3',
-    name: 'Rafael Nery 3',
-    password: '123456789',
-    email: 'nery@gmail.com',
-    isLogged: false
-  },
-]
-
-
-const getUsers = (req, res, next) => {
-  res.status(200).json({ users: DUMMY_USERS })
-}
-
-const getAllLoggedUsers = (req, res, next) => {
-  const DUMMY_LOGGED_USERS = DUMMY_USERS.filter(u => u.isLogged === true)
-
-  if (DUMMY_LOGGED_USERS.length === 0) {
-    throw new HttpError('No logged user found.', 404)
+const getUsers = async (req, res, next) => {
+  let users;
+  try {
+    users = await User.find({}, '-password');
+  } catch(err) {
+    return next(new HttpError('Something went wrong, could not retrieve users', 500))
   }
 
-  res.status(200).json({ users: DUMMY_LOGGED_USERS })
+  res.status(200).json({ users: users.map(user => user.toObject({ getters: true })) })
 }
 
-const signup = (req, res, next) => {
+const signup = async (req, res, next) => {
   const errors = validationResult(req);
-
   if (!errors.isEmpty()) {
-    throw new HttpError('Invalid input, please check your data.', 422)
+    return next(new HttpError('Invalid input, please check your data.', 422)) 
   }
 
   const { email, password, name } = req.body;
+  let existingUser;
+  try {
+    existingUser = await User.findOne({ email: email })
+  } catch (err) {
+    const error = new HttpError('Signing up failed, please try again later.', 500)
+    return next(error);
+  }
 
-  if (DUMMY_USERS.find(u => u.email === email)) {
-    throw new HttpError('This email already has an account, unable to create account.', 432)
+  if(existingUser) {
+    return next(new HttpError('There already is an account registered with this email.', 422))
   }
 
   if (!email || !password || !name) {
-    throw new HttpError('For creating an account you need valids email, name and password.', 401)
+    return next(new HttpError('For creating an account you need valids email, name and password.', 401)) 
   }
 
-  const newUser = {
-    id: uuid.v4(),
+  const newUser = new User({
     email,
     password,
     name,
-    isLogged: true
+    image: 'url image',
+    places: []
+  })
+
+  try {
+    await newUser.save()
+  } catch (err) {
+    const error = new HttpError('Something went wrong, could not create user.', 500)
+    return next(error)
   }
 
-  DUMMY_USERS.push(newUser);
-
-  res.status(201).json({ message: "Your account was created and you're already logged in.", user: DUMMY_USERS.find(u => u.id === newUser.id) })
+  res.status(201).json({ message: "Your account was created and you're already logged in.", user: newUser.toObject({getters: true}) })
 }
 
-const login = (req, res, next) => {
+const login = async (req, res, next) => {
 
   const { email, password } = req.body;
 
-  const user = DUMMY_USERS.find(u => u.email === email); // verificação de email
-
-  if (!user || user.password !== password) {
-    throw new HttpError('User credentials not found, please enter a valid email and password.', 401)
+  let existingUser; // email validation
+  try {
+    existingUser = await User.findOne({ email: email })
+  } catch (err) {
+    const error = new HttpError('Logging in failed, please try again later.', 500)
+    return next(error);
   }
 
-  if (user.email === email && user.password === password) {
-    DUMMY_USERS = DUMMY_USERS.map(u => {
-      if (u.id === user.id) {
-        return {
-          ...user,
-          isLogged: true
-        }
-      }
-      return u;
-    })
+  if (!existingUser || existingUser.password !== password) {
+    const error = new HttpError('Invalid credentials, could not log in.', 401);
+    return next(error);
   }
 
-  res.status(200).json({ message: "You're logged in!", user: DUMMY_USERS.find(u => u.id === user.id) })
+  res.status(200).json({ message: "You're logged in!", user: existingUser.toObject({ getters: true}) })
 }
 
 exports.getUsers = getUsers
-exports.getAllLoggedUsers = getAllLoggedUsers
 exports.signup = signup
 exports.login = login
