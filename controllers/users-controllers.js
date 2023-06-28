@@ -42,7 +42,7 @@ const signup = async (req, res, next) => {
     email,
     password,
     name,
-    image: 'url image',
+    image: req.file.path, // assim, utilizamos a prop file adicionada pelo multer, e adicionamos seu path no servidor (a url seda adicionada no front end);
     places: []
   })
 
