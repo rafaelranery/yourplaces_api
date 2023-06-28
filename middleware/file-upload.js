@@ -25,7 +25,7 @@ const fileUpload = multer({
             // caso file.mimetype não exista em MIME_TYPE_MAP, essa expressão avaliará como undefined.
             // para tornarmos mais lógico e a tipagem mais restrita, utilizamos o operador "!!" para convertermos os retornos para um esquema booleano.
             // ou seja, avaliação de um undefined será transformada em false, assim como os possívesis valores encontrados serão transformados em true.
-            const isValid = MIME_TYPE_MAP[file.mimetype] 
+            const isValid = !!MIME_TYPE_MAP[file.mimetype] 
             
             // Como dito anteriormente, precisamos do caso de sucesso e de erro. 
             // Esta função de callback do mutter recebe como primeiro argumento o possível erro,
