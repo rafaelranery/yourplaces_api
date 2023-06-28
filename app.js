@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require('path') 
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -12,6 +13,13 @@ const app = express();
 
 /* adding middleware for parsing body for post */
 app.use(bodyParser.json());
+
+// Creating a middleware to handle the serving of static files, in our case, the images.
+// we create this middleware using the static method of the express object.
+// this method returns us middleware sthat allow the server to simply return a file,
+// without executing it. It receives an absolute path as argument for the root directory
+// from where the files will be served.
+app.use('/uploads/images', express.static(path.join('uploads', 'images')))
 
 // setting header attatchments to handle CORS errors
 app.use((req, res, next) => {
