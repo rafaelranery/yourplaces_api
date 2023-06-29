@@ -59,7 +59,7 @@ const signup = async (req, res, next) => {
 
   let hashedPassword;
   try {
-    hashedPassword = bcrypt.hash(password, 12);
+    hashedPassword = await bcrypt.hash(password, 12);
   } catch (err) {
     const error = new HttpError(
       "Signing up failed, please try again later",
@@ -103,7 +103,7 @@ const signup = async (req, res, next) => {
 
   res
     .status(201)
-    .json({ serId: newUser.id, email: newUser.email, token: token });
+    .json({ userId: newUser.id, email: newUser.email, token: token });
 };
 
 const login = async (req, res, next) => {
