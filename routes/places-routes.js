@@ -15,10 +15,14 @@ const {
 } = require("../controllers/places-controllers");
 // Middleware para recuperar arquivos com multer
 const fileUpload = require("../middleware/file-upload");
+// middleware for auth protection
+const authCheck = require("../middleware/check-auto");
 
 router.get("/:pid", getPlaceById);
 
 router.get("/user/:uid", getPlacesByUserId);
+
+router.use(authCheck);
 
 /* we are not limited to one middleware, and they will be executed from left to right */
 router.post(
