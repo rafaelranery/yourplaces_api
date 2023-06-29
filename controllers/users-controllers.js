@@ -1,4 +1,5 @@
 const { validationResult } = require('express-validator')
+const bcrypt = require('bcryptjs')
 
 const User = require('../models/user')
 
@@ -38,9 +39,17 @@ const signup = async (req, res, next) => {
     return next(new HttpError('For creating an account you need valids email, name and password.', 401)) 
   }
 
+  let hashedPassword;
+  try {
+    hashedPassword = bcrypt.hash(password, 12)
+  } catch(err) {
+    const error = new HttpError("Signing up failed, please try again later", 500)
+    return next(error)
+  }
+
   const newUser = new User({
     email,
-    password,
+    password: hashedPassword,
     name,
     image: req.file.path, // assim, utilizamos a prop file adicionada pelo multer, e adicionamos seu path no servidor (a url seda adicionada no front end);
     places: []
@@ -58,17 +67,17 @@ const signup = async (req, res, next) => {
 
 const login = async (req, res, next) => {
 
-  const { email, password } = req.body;
+  const { email, password } = req.body; // extração das propriedades presentes no corpo do JSON.
 
   let existingUser; // email validation
   try {
-    existingUser = await User.findOne({ email: email })
+    existingUser = await User.findOne({ email: email }) // tentativa de busca do usuário na db a partir do email.
   } catch (err) {
     const error = new HttpError('Logging in failed, please try again later.', 500)
-    return next(error);
+    return next(error); // erro em caso da busca não poder ser realizada
   }
 
-  if (!existingUser || existingUser.password !== password) {
+  if (!existingUser || existingUser.password !== password) { // (1) Há usuário? (2) A senha é igual?. Não ou não => error.
     const error = new HttpError('Invalid credentials, could not log in.', 401);
     return next(error);
   }
