@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
     const token = req.headers.authorization.split(" ")[1];
 
     if (!token) {
-      throw new HttpError("Authentication failed", 401);
+      throw new HttpError("Authentication failed", 403);
     }
     const decodedToken = jwt.verify(token, "very_secret_private_key");
     req.userData = { userId: decodedToken.userId };
