@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
 
@@ -85,12 +86,24 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
+  let token;
+  try {
+    token = jwt.sign(
+      { userId: newUser.id, email: newUser.email },
+      "very_secret_private_key",
+      { expiresIn: "1h" }
+    );
+  } catch (err) {
+    const error = new HttpError(
+      "Signing up failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
   res
     .status(201)
-    .json({
-      message: "Your account was created and you're already logged in.",
-      user: newUser.toObject({ getters: true }),
-    });
+    .json({ serId: newUser.id, email: newUser.email, token: token });
 };
 
 const login = async (req, res, next) => {
@@ -129,12 +142,31 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  res
-    .status(200)
-    .json({
-      message: "You're logged in!",
-      user: existingUser.toObject({ getters: true }),
-    });
+  let token;
+  try {
+    token = jwt.sign(
+      {
+        userId: existingUser.id,
+        email: existingUser.email,
+      },
+      "very_secret_private_key",
+      {
+        expiresIn: "1h",
+      }
+    );
+  } catch (err) {
+    const error = new HttpError(
+      "Could not log in, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({
+    userId: existingUser.id,
+    email: existingUser.email,
+    token: token,
+  });
 };
 
 exports.getUsers = getUsers;
