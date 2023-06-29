@@ -173,6 +173,11 @@ const updatePlace = async (req, res, next) => {
     return next(error);
   }
 
+  if (req.userData.userId !== updatedPlace.creator.toString()) {
+    const error = new HttpError("Not authorized to perform such task", 401);
+    return next(error);
+  }
+
   updatedPlace.title = title;
   updatedPlace.description = description;
 
@@ -207,6 +212,12 @@ const deletePlace = async (req, res, next) => {
 
   if (!deletedPlace) {
     return next(new HttpError("Could not find place for given id", 404));
+  }
+
+  if (deletedPlace.creator.id !== req.userData.userId) {
+    // we use the id here, because the creator is populated.
+    const error = new HttpError("Not authorized to perform such task.", 401);
+    return next(error);
   }
 
   const imagePath = deletedPlace.image;
