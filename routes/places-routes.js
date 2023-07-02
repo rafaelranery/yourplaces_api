@@ -31,8 +31,7 @@ router.post(
   [
     check("title").not().isEmpty(),
     check("description").isLength({ min: 5 }),
-    check("adress").not().isEmpty(),
-    check("creator").not().isEmpty(),
+    check("adress").not().isEmpty()
   ],
   createPlace
 );
